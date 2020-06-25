@@ -5,6 +5,7 @@ author:
   - Isabel A. de Albuquerque - RA218047
   - Isabella G. Alves - RA175293
   - Nathalia C. Chenfer - RA222803
+bibliography: referencia.bib
 output: 
   pdf_document:
   fig_crop: no
@@ -63,31 +64,32 @@ library(reshape2)
 
 # Introdução
 
+Segundo @inep o número de bla bla bla
+
 O grupo autor deste trabalho escolheu uma base de dados disponibilizada pelo Instituto Nacional de Estudos e Pesquisas Educacionais Anísio Teixeira (INEP) que contém dados sobre diversas escolas do Brasil com alunos que participaram do Exame Nacional do Ensino Médio (ENEM).
 O grupo tem o interesse de verificar:  
 - "se escolas privadas são estritamente melhores do que as públicas".
 
 # Banco de dados
 
-Os dados são o resultado de uma pesquisa feita pelo INEP que relaciona diversas escolas no Brasil com as médias de seus alunos no ENEM. A base de dados está disponível em:
-http://portal.inep.gov.br/microdados e se chama "Enem por escola".
+A base de dados completa assim como demais informações sobre as edições do ENEM por escola podem ser acessada através do link: [\underline{ENEM por escola}](http://portal.inep.gov.br/microdados). Embora a base completa possuir um total de 27 variáveis utilizaremos apenas as que estão descritas abaixo:
 
-O banco de dados apresenta 27 variáveis, porém, a pergunta que buscamos responder utiliza apenas sete delas, então abaixo apresentamos a descrição delas.
+* **NU_ANO**: Ano da edição do ENEM por Escola;
 
-`NU_ANO`: Ano da edição do ENEM por Escola
+* **TP_DEPENDENCIA_ADM_ESCOLA**: Tipo da dependência administrativa da Escola;
 
-`TP_DEPENDENCIA_ADM_ESCOLA`: Tipo da dependência administrativa da entidade (Escola) do Educacenso. Como ler a variável:
+* **NU_MEDIA_CN**: Média das notas de Ciências da Natureza;
 
-    1 - Federal, 
-    2 - Estadual,
-    3 - Municipal,
-    4 - Privada.
+* **NU_MEDIA_CH**: Média das notas de Ciências Humanas;
 
-`NU_MEDIA_CN`: Média das notas de Ciências da Natureza do Ensino Médio Regular.   Compreende o período de 2009 a 2015.  
-`NU_MEDIA_CH`: Média das notas de Ciências Humanas do Ensino Médio Regular. Compreende o período de 2009 a 2015.  
-`NU_MEDIA_LP`: Média das notas de Linguagens e Códigos do Ensino Médio Regular. Compreende o período de 2009 a 2015.  
-`NU_MEDIA_MT`: Média das notas de Matemática do Ensino Médio Regular. Compreende o período de 2009 a 2015.  
-`NU_MEDIA_RED`: Média das notas de Redação do Ensino Médio Regular. Compreende o período de 2008 a 2015.
+* **NU_MEDIA_LP**: Média das notas de Linguagens e Códigos;
+
+* **NU_MEDIA_MT**: Média das notas de Matemática;
+
+* **NU_MEDIA_RED**: Média das notas de Redação.
+
+Ressaltamos que para a realização da análise modificamos a variável **TP_DEPENDENCIA_ADM_ESCOLA** que originalmente é codificada como: 1 - Federal, 2 - Estadual, 3 - Municipal e 4 - Privada para 1 - Privada e 2 - Pública. De modo que as categorias administrativas Federal, Estadual e Municipal foram unificadas na categoria Pública.  
+Além disso, restringimos a análise ao período entre os anos de 2011 a 2015. Pois, segundo @inep a partir da edição de 2011 a taxa de participação necessária para divulgação do desempenho no ENEM por escola aumentou para 50$\%$. Sendo que, a taxa de participação é o número total de participantes no ENEM da escola dividido pelo número de matriculados nos anos finais do Ensino Médio da escola, informado no Censo Escolar. Bem como, passou a ser considerado como participante o estudante concluinte do ensino médio que fez as 4 áreas de conhecimento e redação. Dessa forma, não havendo mais escolas com resultado divulgado sem média das notas de redação.
 
 # Analise exploratória
 
@@ -114,6 +116,9 @@ colnames(escolas) <- ifelse(colnames(escolas) == "NU_ANO",
 colnames(escolas) <- ifelse(colnames(escolas) == "TP_DEPENDENCIA_ADM_ESCOLA",
                             "Administração",colnames(escolas))
 ```
+
+Dada a forma como estruturamos os dados descrita na seção Banco de dados obtemos `r table(escolas$Administração == "Pública")[2]` escolas públicas e `r table(escolas$Administração == "Privada")[2]` escolas privadas que participaram das edições de 2011 a 2015 do ENEM por escola.  
+Considerando as informações 
 
 ```{r CN}
 #TABELA RESUMO DOS VALORES OBSERVADOS DA VARIAVEL NOTAS MEDIAS EM CIENCIAS DA NATUREZA
@@ -242,3 +247,4 @@ data %>%
 
 # Considerações finais
 
+# Referências
