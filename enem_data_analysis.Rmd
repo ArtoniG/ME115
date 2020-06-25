@@ -58,11 +58,10 @@ library(Matrix)
 library(VGAM)
 library(nnet)
 library(kableExtra)
+library(reshape2)
 ```
 
 # Introdução
-
-Como atividade para a turma da disciplina ME115 - Linguagem em R do terceiro semestre  de 2019 da Unversidade de Campinas, a Profa.Dr. Tatiana Benaglia, que ministrou a disciplina, pediu a todos os alunos que se organizassem em grupos de até 4 alunos e buscassem um banco de dados de seu interesse para que aplicassem o conteúdo ensinado em aula.
 
 O grupo autor deste trabalho escolheu uma base de dados disponibilizada pelo Instituto Nacional de Estudos e Pesquisas Educacionais Anísio Teixeira (INEP) que contém dados sobre diversas escolas do Brasil com alunos que participaram do Exame Nacional do Ensino Médio (ENEM).
 O grupo tem o interesse de verificar:  
@@ -73,13 +72,9 @@ O grupo tem o interesse de verificar:
 Os dados são o resultado de uma pesquisa feita pelo INEP que relaciona diversas escolas no Brasil com as médias de seus alunos no ENEM. A base de dados está disponível em:
 http://portal.inep.gov.br/microdados e se chama "Enem por escola".
 
-#Descrição das Variáves
-
 O banco de dados apresenta 27 variáveis, porém, a pergunta que buscamos responder utiliza apenas sete delas, então abaixo apresentamos a descrição delas.
 
 `NU_ANO`: Ano da edição do ENEM por Escola
-
-####Dados das escolas
 
 `TP_DEPENDENCIA_ADM_ESCOLA`: Tipo da dependência administrativa da entidade (Escola) do Educacenso. Como ler a variável:
 
@@ -88,213 +83,162 @@ O banco de dados apresenta 27 variáveis, porém, a pergunta que buscamos respon
     3 - Municipal,
     4 - Privada.
 
-####Médias$^1$
-
 `NU_MEDIA_CN`: Média das notas de Ciências da Natureza do Ensino Médio Regular.   Compreende o período de 2009 a 2015.  
 `NU_MEDIA_CH`: Média das notas de Ciências Humanas do Ensino Médio Regular. Compreende o período de 2009 a 2015.  
 `NU_MEDIA_LP`: Média das notas de Linguagens e Códigos do Ensino Médio Regular. Compreende o período de 2009 a 2015.  
 `NU_MEDIA_MT`: Média das notas de Matemática do Ensino Médio Regular. Compreende o período de 2009 a 2015.  
 `NU_MEDIA_RED`: Média das notas de Redação do Ensino Médio Regular. Compreende o período de 2008 a 2015.
 
-####Indicadores$^2$
-`INSE`: Indicador de Nível Socioeconômico da escola - Para melhor descrever o nível socioeconômico das escolas, foram criados seis grupos, de forma que o Grupo 1 congrega as escolas com INSE médio mais baixo e o Grupo 6, com mais alto. (Edição 2015)$^3$ Compreende o ano de 2015.
-
-    Grupo 1
-    Grupo 2
-    Grupo 3
-    Grupo 4
-    Grupo 5
-    Grupo 6 
-
-
-**Notas de sobrescrição:**    
-$^1$. Até 2008 a escala das notas do Enem variavam de Zero a 100 (Cem). Nos demais anos a escala varia de zero a 1.000 (um mil).  
-$^2$. Informações sobre os Indicadores são apresentadas em Nota Técnica específica disponível no Portal do Inep.  
-$^3$. Apenas o ano de 2015 tem o indicador INSE. Esta versão era a mais atual até o fechamento do produto.  
-
-#Analise exploratória e/ou descritiva
-
-passos
-1- grafico da distribuição das notas para demonstrar a estabilidade.
-2 - separar os gráficos por dependencia administrativa
-3 - fazer gráfico violino (seja lá o que for isso!)
-
-
-Principais estatísticas sumárias e gráficos relevantes para responder a(s) pergunta(s) de interesse.
-
+# Analise exploratória
 
 ```{r}
-#lendo arquivo
-escolas <- read_delim("MICRODADOS_ENEM_ESCOLA.csv", delim = ";")
+# ALTERAR O CAMINHO PARA O DIRETORIO NO QUAL O ARQUIVO "MICRODADOS_ENEM_ESCOLA.csv" 
+# ESTA SALVO NO SEU COMPUTADOR
+# NAO SALVE OS DADOS NO MESMO DIRETORIO QUE ESTA O ARQUIVO enem_data_analysis.Rmd
+# QUE FOI IMPORTADO DO GITHUB
 
-# tranformando tipo de adm em fator
-fator_adm <- factor(escolas$TP_DEPENDENCIA_ADM_ESCOLA, labels = c("Federais", 
-                                                                  "Estaduais", "Municipais", "Privadas"))
-escolas_fator <- escolas
-escolas_fator$TP_DEPENDENCIA_ADM_ESCOLA <- fator_adm
+# IMPORTA OS DADOS
+escolas <- read.csv("MICRODADOS_ENEM_ESCOLA.csv", sep = ";")
 
-#filtrando dados faltantes e com erros de digitação
-escolas_fator <- escolas_fator %>%
-                  filter(NU_MEDIA_CH > 100, NU_MEDIA_CN > 100, NU_MEDIA_MT > 100, NU_MEDIA_LP > 100,
-                         NU_MEDIA_RED > 100, NU_ANO > 2008)
+# TRANSFORMA A VARIAVEL SOBRE DEPENDENCIA ADMINISTRATIVA EM FATOR
+escolas$TP_DEPENDENCIA_ADM_ESCOLA <- if_else(escolas$TP_DEPENDENCIA_ADM_ESCOLA == 4,
+                                             "Privada","Pública")
+escolas$TP_DEPENDENCIA_ADM_ESCOLA <- as.factor(escolas$TP_DEPENDENCIA_ADM_ESCOLA)
+
+# FILTRA OS DADOS DE 2011 A 2015
+escolas <- escolas %>% filter(NU_ANO > 2010)
+
+# ALTERA OS NOMES DAS COLUNAS QUE APARECERAM NAS TABELAS
+colnames(escolas) <- ifelse(colnames(escolas) == "NU_ANO",
+                            "Ano",colnames(escolas))
+colnames(escolas) <- ifelse(colnames(escolas) == "TP_DEPENDENCIA_ADM_ESCOLA",
+                            "Administração",colnames(escolas))
 ```
 
-
-
-As variáveis interessantes para extrair as estatisticas sumárias são as quantitativas. Das variáveis de interesse as quantitativas são `NU_MEDIA_CN`, `NU_MEDIA_CH`, `NU_MEDIA_LP`, `NU_MEDIA_MT` e `NU_MEDIA_RED`.Abaixo é apresentada a estatistica sumária dessas variáveis.
-
-```{r}
-print(2009)
-escolas_fator %>%
-  filter(NU_ANO == 2009) %>%
-  dplyr::select(NU_MEDIA_CH,NU_MEDIA_CN,NU_MEDIA_LP,NU_MEDIA_MT,NU_MEDIA_RED) %>%
-  summary()
-print(2010)
-escolas_fator %>%
-  filter(NU_ANO == 2010) %>%
-  dplyr::select(NU_MEDIA_CH,NU_MEDIA_CN,NU_MEDIA_LP,NU_MEDIA_MT,NU_MEDIA_RED) %>%
-  summary()
-print(2011)
-escolas_fator %>%
-  filter(NU_ANO == 2011) %>%
-  dplyr::select(NU_MEDIA_CH,NU_MEDIA_CN,NU_MEDIA_LP,NU_MEDIA_MT,NU_MEDIA_RED) %>%
-  summary()
-print(2012)
-escolas_fator %>%
-  filter(NU_ANO == 2012) %>%
-  dplyr::select(NU_MEDIA_CH,NU_MEDIA_CN,NU_MEDIA_LP,NU_MEDIA_MT,NU_MEDIA_RED) %>%
-  summary()
-print(2013)
-escolas_fator %>%
-  filter(NU_ANO == 2013) %>%
-  dplyr::select(NU_MEDIA_CH,NU_MEDIA_CN,NU_MEDIA_LP,NU_MEDIA_MT,NU_MEDIA_RED) %>%
-  summary()
-print(2014)
-escolas_fator %>%
-  filter(NU_ANO == 2014) %>%
-  dplyr::select(NU_MEDIA_CH,NU_MEDIA_CN,NU_MEDIA_LP,NU_MEDIA_MT,NU_MEDIA_RED) %>%
-  summary()
-print(2015)
-escolas_fator %>%
-  filter(NU_ANO == 2015) %>%
-  dplyr::select(NU_MEDIA_CH,NU_MEDIA_CN,NU_MEDIA_LP,NU_MEDIA_MT,NU_MEDIA_RED) %>%
-  summary()
-
+```{r CN}
+#TABELA RESUMO DOS VALORES OBSERVADOS DA VARIAVEL NOTAS MEDIAS EM CIENCIAS DA NATUREZA
+escolas %>% group_by(Ano,`Administração`) %>%
+  summarize(Mínimo = min(NU_MEDIA_CN,na.rm = T),
+            `1ºQuartil` = round(quantile(NU_MEDIA_CN, 0.25,na.rm = T),2),
+            Mediana = round(median(NU_MEDIA_CN,na.rm = T),2),
+            Média = round(mean(NU_MEDIA_CN,na.rm = T),2),
+            `3ºQuartil` = round(quantile(NU_MEDIA_CN,0.75,na.rm = T),2),
+            Máximo = max(NU_MEDIA_CN,na.rm = T),
+            `Desvio Padrão` = round(sd(NU_MEDIA_CN,na.rm = T),2)
+            ) %>% 
+  kable(booktabs = TRUE, 
+        caption = "Comparação entre os anos de 2011 a 2015 das medidas resumo das notas médias em Ciências da Natureza considerando as categorias administrativas das escolas.") %>%
+  kable_styling(latex_options = "HOLD_position",
+                font_size = 8) %>% 
+  kable_styling(latex_options = "scale_down")
 ```
 
-
-Para melhor visualização e analise, é apresentada, abaixo, a plotagem de um histograma para cada uma das variáveis quantitativas.
-
-```{r}
-#histogramas com suas suavizações notas todas as escolas em ciencias humanas, em todos os anos
-#(2009 - 2015)
-escolas_fator %>%   
-  dplyr::select(NU_MEDIA_CH) %>%
-  ggplot(aes(x = NU_MEDIA_CH)) + 
-  geom_histogram(aes(y =..density..), bins = 100 , fill = "blue" ) +
-  geom_density(bw = "nrd0", color = "red") +
-  labs(title ="Distribuição das notas de Ciências Humanas", x = "Médias", y = "Densidade") +
-  coord_cartesian(xlim = c(125,900), ylim = c(0,0.012))
-
-#histogramas com suas suavizações notas todas as escolas em ciencias da natureza, em todos os anos
-#(2009 - 2015)
-escolas_fator %>%   
-  dplyr::select(NU_MEDIA_CN) %>%
-  ggplot(aes(x = NU_MEDIA_CN)) + 
-  geom_histogram(aes(y =..density..), bins = 100 , fill = "blue" ) +
-  geom_density(bw = "nrd0", color = "red")+
-  labs(title ="Distribuição das notas de Ciências da natureza", x = "Médias", y = "Densidade") +
-  coord_cartesian(xlim = c(125,900), ylim = c(0,0.012))
-
-#histogramas com suas suavizações notas todas as escolas em matemática, em todos os anos (2009 - 2015)
-escolas_fator %>%   
-  dplyr::select(NU_MEDIA_MT) %>%
-  ggplot(aes(x = NU_MEDIA_MT)) + 
-    geom_histogram(aes(y =..density..), bins = 100 , fill = "blue" ) +
-    geom_density(bw = "nrd0", color = "red")+
-  labs(title ="Distribuição das notas de matemática", x = "Médias", y = "Densidade") +
-  coord_cartesian(xlim = c(125,900), ylim = c(0,0.012))
-
-#histograma com suas suavizações notas todas as escolas em português, em todos os anos (2009 - 2015)
-escolas_fator %>%   
-  dplyr::select(NU_MEDIA_LP) %>%
-  ggplot(aes(x = NU_MEDIA_LP)) + 
-  geom_histogram(aes(y =..density..), bins = 100 , fill = "blue" ) +
-  geom_density(bw = "nrd0", color = "red")+
-  labs(title ="Distribuição das notas de Linguagens e códigos", x = "Médias", y = "Densidade") +
-  coord_cartesian(xlim = c(125,900), ylim = c(0,0.012))
-
-#histograma com suas suavizações notas todas as escolas em redação, em todos os anos (2009 - 2015)
-escolas_fator %>%   
-  dplyr::select(NU_MEDIA_RED) %>%
-  ggplot(aes(x = NU_MEDIA_RED)) + 
-  geom_histogram(aes(y =..density..), bins = 100 , fill = "blue" ) +
-  geom_density(bw = "nrd0", color = "red")+
-  labs(title ="Distribuição das notas de Redação", x = "Médias", y = "Densidade") +
-  coord_cartesian(xlim = c(125,900), ylim = c(0,0.012))
+```{r CH}
+#TABELA RESUMO DOS VALORES OBSERVADOS DA VARIAVEL NOTAS MEDIAS EM CIENCIAS HUMANAS
+escolas %>% group_by(Ano,`Administração`) %>%
+  summarize(Mínimo = min(NU_MEDIA_CH,na.rm = T),
+            `1ºQuartil` = round(quantile(NU_MEDIA_CH, 0.25,na.rm = T),2),
+            Mediana = round(median(NU_MEDIA_CH,na.rm = T),2),
+            Média = round(mean(NU_MEDIA_CH,na.rm = T),2),
+            `3ºQuartil` = round(quantile(NU_MEDIA_CH,0.75,na.rm = T),2),
+            Máximo = max(NU_MEDIA_CH,na.rm = T),
+            `Desvio Padrão` = round(sd(NU_MEDIA_CH,na.rm = T),2)
+            ) %>% 
+  kable(booktabs = TRUE, 
+        caption = "Comparação entre os anos de 2011 a 2015 das medidas resumo das notas médias em Ciências Humanas considerando as categorias administrativas das escolas.") %>%
+  kable_styling(latex_options = "HOLD_position",
+                font_size = 8) %>% 
+  kable_styling(latex_options = "scale_down")
 ```
 
-Como é possível observar nos gráficos acima, apenas as notas de ciência da natureza e de redação se assemelham a uma distribuição normal, enquanto as de ciências humanas, matemática e linguagens e códigos tem uma distribuição parecida entre si, mas não definida.
-
-```{r}
-#padronizando notas
-escolas2_fator <- escolas_fator %>%
-  group_by(NU_ANO) %>%
-  mutate(MEDIA_CH_PADRONIZADA = (NU_MEDIA_CH - mean(NU_MEDIA_CH))/ sd(NU_MEDIA_CH),
-         MEDIA_CN_PADRONIZADA = (NU_MEDIA_CN - mean(NU_MEDIA_CN)) / sd(NU_MEDIA_CN),
-         MEDIA_MT_PADRONIZADA = (NU_MEDIA_MT - mean(NU_MEDIA_MT)) / sd(NU_MEDIA_MT),
-         MEDIA_LP_PADRONIZADA = (NU_MEDIA_LP - mean(NU_MEDIA_LP)) / sd(NU_MEDIA_LP),
-         MEDIA_RED_PADRONIZADA = (NU_MEDIA_RED - mean(NU_MEDIA_RED)) / sd(NU_MEDIA_LP)
-         ) 
+```{r LP}
+#TABELA RESUMO DOS VALORES OBSERVADOS DA VARIAVEL NOTAS MEDIAS EM LINGUAGENS E CODIGOS
+escolas %>% group_by(Ano,`Administração`) %>%
+  summarize(Mínimo = min(NU_MEDIA_LP,na.rm = T),
+            `1ºQuartil` = round(quantile(NU_MEDIA_LP, 0.25,na.rm = T),2),
+            Mediana = round(median(NU_MEDIA_LP,na.rm = T),2),
+            Média = round(mean(NU_MEDIA_LP,na.rm = T),2),
+            `3ºQuartil` = round(quantile(NU_MEDIA_LP,0.75,na.rm = T),2),
+            Máximo = max(NU_MEDIA_LP,na.rm = T),
+            `Desvio Padrão` = round(sd(NU_MEDIA_LP,na.rm = T),2)
+            ) %>% 
+  kable(booktabs = TRUE, 
+        caption = "Comparação entre os anos de 2011 a 2015 das medidas resumo das notas médias em Linguagens e Códigos considerando as categorias administrativas das escolas.") %>%
+  kable_styling(latex_options = "HOLD_position",
+                font_size = 8) %>% 
+  kable_styling(latex_options = "scale_down")
 ```
 
-A seguir estão apresentados gráficos de densidade das notas das diferentes categorias de conhecimento avaliadas no ENEM normalizadas.
-
-```{r}
-escolas2_fator %>%
-  ggplot(aes(x = MEDIA_CN_PADRONIZADA, col = factor(NU_ANO))) +
-  geom_rect(aes(xmin = mean(MEDIA_CN_PADRONIZADA), 
-                xmax = mean(MEDIA_CN_PADRONIZADA), ymin = -Inf, ymax = Inf), col = "red")+
-  geom_density() +
-  coord_cartesian(xlim = c(-3,5.55), ylim = c(0, 0.7))+
-  labs(title = "Distribuição de ciencias naturais (padronizada)",x = "Média Padronizada", y = "Densidade", col = "Legenda")
-
-escolas2_fator %>%
-  ggplot(aes(x = MEDIA_CH_PADRONIZADA, col = factor(NU_ANO))) +
-  geom_rect(aes(xmin = mean(MEDIA_CH_PADRONIZADA), 
-                xmax = mean(MEDIA_CH_PADRONIZADA), ymin = -Inf, ymax = Inf), col = "red")+
-  geom_density() +
-  coord_cartesian(xlim = c(-3,5.55), ylim = c(0, 0.7))+
-  labs(title = "Distribuição de ciencias humanas (padronizada)",x = "Média Padronizada", y = "Densidade", col = "Legenda")
-
-escolas2_fator %>%
-  ggplot(aes(x = MEDIA_LP_PADRONIZADA, col = factor(NU_ANO))) +
-  geom_rect(aes(xmin = mean(MEDIA_LP_PADRONIZADA), 
-                xmax = mean(MEDIA_LP_PADRONIZADA), ymin = -Inf, ymax = Inf), col = "red")+
-  geom_density() +
-  coord_cartesian(xlim = c(-3,5.55), ylim = c(0, 0.7))+
-  labs(title = "Distribuição de Linguagens e Códigos (padronizada)",x = "Média Padronizada", y = "Densidade", col = "Legenda")
-
-escolas2_fator %>%
-  ggplot(aes(x = MEDIA_MT_PADRONIZADA, col = factor(NU_ANO))) + 
-  geom_rect(aes(xmin = mean(MEDIA_MT_PADRONIZADA), 
-                xmax = mean(MEDIA_MT_PADRONIZADA), ymin = -Inf, ymax = Inf), col = "red")+
-  geom_density() +
-  coord_cartesian(xlim = c(-3,5.55), ylim = c(0, 0.7)) +
-  labs(title = "Distribuição de Matemática (padronizada)",x = "Média Padronizada", y = "Densidade", col = "Legenda")
-
-escolas2_fator %>%
-  ggplot(aes(x = MEDIA_RED_PADRONIZADA, col = factor(NU_ANO))) + 
-  geom_rect(aes(xmin = mean(MEDIA_RED_PADRONIZADA), 
-                xmax = mean(MEDIA_RED_PADRONIZADA), ymin = -Inf, ymax = Inf), col = "red")+
-  geom_density() +
-  coord_cartesian(xlim = c(-3,5.55), ylim = c(0, 0.7)) +
-  labs(title = "Distribuição de Matemática (padronizada)",x = "Média Padronizada", y = "Densidade", col = "Legenda")
+```{r MT}
+#TABELA RESUMO DOS VALORES OBSERVADOS DA VARIAVEL NOTAS MEDIAS EM MATEMATICA
+escolas %>% group_by(Ano,`Administração`) %>%
+  summarize(Mínimo = min(NU_MEDIA_MT,na.rm = T),
+            `1ºQuartil` = round(quantile(NU_MEDIA_MT, 0.25,na.rm = T),2),
+            Mediana = round(median(NU_MEDIA_MT,na.rm = T),2),
+            Média = round(mean(NU_MEDIA_MT,na.rm = T),2),
+            `3ºQuartil` = round(quantile(NU_MEDIA_MT,0.75,na.rm = T),2),
+            Máximo = max(NU_MEDIA_MT,na.rm = T),
+            `Desvio Padrão` = round(sd(NU_MEDIA_MT,na.rm = T),2)
+            ) %>% 
+  kable(booktabs = TRUE, 
+        caption = "Comparação entre os anos de 2011 a 2015 das medidas resumo das notas médias em Matemática considerando as categorias administrativas das escolas.") %>%
+  kable_styling(latex_options = "HOLD_position",
+                font_size = 8) %>% 
+  kable_styling(latex_options = "scale_down")
 ```
 
+```{r RED}
+#TABELA RESUMO DOS VALORES OBSERVADOS DA VARIAVEL NOTAS MEDIAS NA REDACAO
+escolas %>% group_by(Ano,`Administração`) %>%
+  summarize(Mínimo = min(NU_MEDIA_RED,na.rm = T),
+            `1ºQuartil` = round(quantile(NU_MEDIA_RED, 0.25,na.rm = T),2),
+            Mediana = round(median(NU_MEDIA_RED,na.rm = T),2),
+            Média = round(mean(NU_MEDIA_RED,na.rm=T),2),
+            `3ºQuartil` = round(quantile(NU_MEDIA_RED,0.75,na.rm = T),2),
+            Máximo = max(NU_MEDIA_RED,na.rm = T),
+            `Desvio Padrão` = round(sd(NU_MEDIA_RED,na.rm = T),2)
+            ) %>% 
+  kable(booktabs = TRUE, 
+        caption = "Comparação entre os anos de 2011 a 2015 das medidas resumo das notas médias na Redação considerando as categorias administrativas das escolas.") %>%
+  kable_styling(latex_options = "HOLD_position",
+                font_size = 8) %>% 
+  kable_styling(latex_options = "scale_down")
+```
 
-#Considerações finais
+```{r include=FALSE}
+# PREPARA DOS DADOS PARA GERAR OS GRAFICOS
+data <- escolas %>% 
+  dplyr::select(NU_MEDIA_CN,
+                NU_MEDIA_CH,
+                NU_MEDIA_LP,
+                NU_MEDIA_MT,
+                NU_MEDIA_RED) %>% t() %>% as.data.frame() 
+data$Habilidades <- ifelse(row.names(data) == "NU_MEDIA_CN","Ciências da Natureza",
+                           ifelse(row.names(data) == "NU_MEDIA_CH","Ciências Humanas",
+                                  ifelse(row.names(data) == "NU_MEDIA_LP","Linguagens e Códigos",
+                                         ifelse(row.names(data) == "NU_MEDIA_MT","Matemática","Redação"))))
+data <- melt(data,id="Habilidades")
+data$`Administração` <- rep(escolas$Administração,rep(5,length(escolas$Administração)))
+data$Ano <- rep(escolas$Ano,rep(5,length(escolas$Ano)))
+```
 
-#Bibliografia
+```{r plot, fig.align='center', fig.cap="Comparação das distribuições amostrais das notas médias obtidas no ENEM por estudantes de escolas públicas e privadas de todo o país entre os anos de 2011 a 2015.",fig.pos="H", message=FALSE, error=FALSE}
 
-R for data science
+data %>% 
+  ggplot() + 
+  aes(x=value, 
+      color=Habilidades) + 
+  geom_density() +
+  facet_grid(Ano~Administração,scales = "free") +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(size = 8),
+        axis.text.y = element_blank(),
+        axis.title = element_text(size = 8),
+        title = element_text(size = 9)) +
+  ggtitle("Distribuições amostrais das notas médias obtidas no ENEM\nentre os anos de 2011 a 2015 de estudantes de escolas públicas e privadas ") +
+  xlab("Notas médias") + 
+  ylab("Densidades")
+```
+
+# Considerações finais
+
