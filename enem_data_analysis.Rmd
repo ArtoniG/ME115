@@ -7,7 +7,8 @@ author:
   - Nathalia C. Chenfer - RA222803
 bibliography: referencia.bib
 output: 
-  pdf_document:
+  bookdown::pdf_document2:
+    toc: FALSE
   fig_crop: no
 fontsize: 10pt
 sansfont: Times
@@ -41,6 +42,7 @@ header-includes:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE,error = FALSE)
+options(knitr.table.format = "latex")
 ```
 
 ```{r}
@@ -64,15 +66,16 @@ library(reshape2)
 
 # Introdução
 
-Segundo @inep o número de bla bla bla
-
-O grupo autor deste trabalho escolheu uma base de dados disponibilizada pelo Instituto Nacional de Estudos e Pesquisas Educacionais Anísio Teixeira (INEP) que contém dados sobre diversas escolas do Brasil com alunos que participaram do Exame Nacional do Ensino Médio (ENEM).
-O grupo tem o interesse de verificar:  
-- "se escolas privadas são estritamente melhores do que as públicas".
+desempenho médio dos estudantes de escolas particulares ($DM_{Part}$)
+desempenho médio dos estudantes de escolas públicas ($DM_{Pub}$)
+Ciências da Natureza (CN)
+Ciências Humanas (CH)
+Linguagens e Códigos (LC)
+Matemática (MT)
 
 # Banco de dados
 
-A base de dados completa assim como demais informações sobre as edições do ENEM por escola podem ser acessada através do link: [\underline{ENEM por escola}](http://portal.inep.gov.br/microdados). Embora a base completa possuir um total de 27 variáveis utilizaremos apenas as que estão descritas abaixo:
+A base de dados completa assim como demais informações sobre as edições do ENEM por escola podem ser acessada através do link: [\underline{ENEM por escola}](http://portal.inep.gov.br/microdados). Embora a base completa possui um total de 27 variáveis utilizaremos apenas as que estão descritas abaixo:
 
 * **NU_ANO**: Ano da edição do ENEM por Escola;
 
@@ -100,7 +103,7 @@ Além disso, restringimos a análise ao período entre os anos de 2011 a 2015. P
 # QUE FOI IMPORTADO DO GITHUB
 
 # IMPORTA OS DADOS
-escolas <- read.csv("MICRODADOS_ENEM_ESCOLA.csv", sep = ";")
+escolas <- read.csv("~/Downloads/undergraduate/1sem20/ME115/last_job/enem/microdados_enem_por_escola/DADOS/MICRODADOS_ENEM_ESCOLA.csv", sep = ";")
 
 # TRANSFORMA A VARIAVEL SOBRE DEPENDENCIA ADMINISTRATIVA EM FATOR
 escolas$TP_DEPENDENCIA_ADM_ESCOLA <- if_else(escolas$TP_DEPENDENCIA_ADM_ESCOLA == 4,
@@ -117,8 +120,11 @@ colnames(escolas) <- ifelse(colnames(escolas) == "TP_DEPENDENCIA_ADM_ESCOLA",
                             "Administração",colnames(escolas))
 ```
 
-Dada a forma como estruturamos os dados descrita na seção Banco de dados obtemos `r table(escolas$Administração == "Pública")[2]` escolas públicas e `r table(escolas$Administração == "Privada")[2]` escolas privadas que participaram das edições de 2011 a 2015 do ENEM por escola.  
-Considerando as informações 
+Dada a forma como estruturamos os dados descrita na seção Banco de dados obtemos `r table(escolas$Administração == "Pública")[2]` observações de escolas públicas e `r table(escolas$Administração == "Privada")[2]` observações de escolas privadas que participaram das edições de 2011 a 2015 do ENEM por escola.
+
+Considerando as informações sobre as notas médias em CN presentes na Tabela \@ref(tab:CN) podemos observar que em todos os anos o $DM_{Part}$ se sobressai em relação ao $DM_{Pub}$. Chama atenção o fato de que em todo o período 75$\%$ do $DM_{Pub}$ ficou abaixo de 500 pontos, sendo que em `r escolas %>% filter(Administração == "Pública") %>% group_by(Ano) %>% summarize(qtl = quantile(NU_MEDIA_CN,0.75,na.rm = T)) %>% filter(qtl == max(qtl)) %>% dplyr::select(Ano) %>% pull()` ano de melhor resultado foi registrado que 75$\%$ do $DM_{Pub}$ ficou abaixo de `r escolas %>% filter(Administração == "Pública") %>% group_by(Ano) %>% summarize(qtl = quantile(NU_MEDIA_CN,0.75,na.rm = T)) %>% filter(qtl == max(qtl)) %>% dplyr::select(qtl) %>% pull()` pontos. Em contraste, em `r escolas %>% filter(Administração == "Privada") %>% group_by(Ano) %>% summarize(qtl = round(quantile(NU_MEDIA_CN,0.25,na.rm = T),2)) %>% filter(qtl == min(qtl)) %>% dplyr::select(Ano) %>% pull()` ano de pior resultado foi registrado que 75$\%$ do $DM_{Part}$ ficou acima dos `r escolas %>% filter(Administração == "Privada") %>% group_by(Ano) %>% summarize(qtl = round(quantile(NU_MEDIA_CN,0.25,na.rm = T),2)) %>% filter(qtl == min(qtl)) %>% dplyr::select(qtl) %>% pull()` pontos. Em outras palavras, para os anos de 2011 a 2015, dentre os 25$\%$ dos piores resultados do $DM_{Part}$ em CN foram registradas pontuações melhores do que 75$\%$ do $DM_{Pub}$.  
+Além disso, ainda na Tabela \@ref(tab:CN) observa-se que as medidas de posição central Média e Mediana possuem valores muito próximos em cada ano, um forte indício de simetria nas distribuições dos dados. Bem como, nota-se que os desvios-padrões dos $DM_{Pub}$ são menores do que os do $DM_{Part}$ em todo o período, indicando que as distribuições dos $DM_{Pub}$ se concentram mais em torno da média enquanto que as distribuições do $DM_{Part}$ possuem uma maior variabilidade.  
+De modo geral, desde 2011 a 2015 todas as medidas das distribuições em cada categoria administrativa permaneceram muito próximas. Isso nos mostra que durante estes 5 anos não houve uma mudança significativa tanto no $DM_{Part}$ quanto no $DM_{Pub}$ em relação a CN. Fato que fica evidente quando olhamos para a Figura \@ref(fig:plot) na qual é mostrada em cor vermelha as distribuições amostrais do $DM_{Part}$ e $DM_{Pub}$ para cada ano. Estas estão quase que alinhadas umas sobre as outras e são muito semelhantes em todos os anos para cada categoria administrativa.
 
 ```{r CN}
 #TABELA RESUMO DOS VALORES OBSERVADOS DA VARIAVEL NOTAS MEDIAS EM CIENCIAS DA NATUREZA
@@ -227,7 +233,7 @@ data$`Administração` <- rep(escolas$Administração,rep(5,length(escolas$Admin
 data$Ano <- rep(escolas$Ano,rep(5,length(escolas$Ano)))
 ```
 
-```{r plot, fig.align='center', fig.cap="Comparação das distribuições amostrais das notas médias obtidas no ENEM por estudantes de escolas públicas e privadas de todo o país entre os anos de 2011 a 2015.",fig.pos="H", message=FALSE, error=FALSE}
+```{r plot, fig.align='center', fig.cap="Comparação das distribuições amostrais das notas médias obtidas no ENEM por estudantes de escolas públicas e privadas entre os anos de 2011 a 2015, considerando as habilidades exigidas.",fig.pos="H", message=FALSE, error=FALSE}
 
 data %>% 
   ggplot() + 
